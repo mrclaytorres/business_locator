@@ -19,10 +19,13 @@ def geocoding(address):
 
     results = response.json()
 
-    coordinate = {
-        'lat': results['results'][0]['geometry']['location']['lat'],
-        'lng': results['results'][0]['geometry']['location']['lng']
-    }
+    if results['status'] == 'OK':
+        coordinate = {
+            'lat': results['results'][0]['geometry']['location']['lat'],
+            'lng': results['results'][0]['geometry']['location']['lng']
+        }
+    else:
+        coordinate = 'none'
 
     return coordinate
     
@@ -30,29 +33,41 @@ def geocoding(address):
 # Find the place_id of the Business
 def find_place(businessObject):
     
+    place_id = ''
     address = businessObject['address']
 
     remove_non_word = re.sub(r"[^\w\s]", '', address)
     parse_address = re.sub(r"\s+", '+', remove_non_word)
 
+    print(f'Retrieving {remove_non_word} business ID.')
+
     coordinate = geocoding(parse_address)
 
     business_name = businessObject['name']
-    remove_non_word = re.sub(r"[^\w\s]", '', business_name)
+    b_remove_non_word = re.sub(r"[^\w\s]", '', business_name)
+    limit_business_name = b_remove_non_word.split(' ')[:4]
+    stripped_name = ' '.join(limit_business_name)
+    
+    if coordinate != 'none':
+        lat = str(coordinate['lat'])
+        lng = str(coordinate['lng'])
 
-    lat = str(coordinate['lat'])
-    lng = str(coordinate['lng'])
+        try:
+            url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" + stripped_name + "&inputtype=textquery&locationbias=circle:2000@" + lat + "," + lng +"&fields=place_id&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
 
-    url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" + business_name + "&inputtype=textquery&locationbias=circle:2000@" + lat + "," + lng +"&fields=place_id&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
+            payload={}
+            headers = {}
 
-    payload={}
-    headers = {}
+            response = requests.request("GET", url, headers=headers, data=payload)
 
-    response = requests.request("GET", url, headers=headers, data=payload)
+            results = response.json()
 
-    results = response.json()
+            place_id = results['candidates'][0]['place_id']
 
-    place_id = results['candidates'][0]['place_id']
+        except:
+            place_id = 'none'
+    else:
+        pass
 
     return place_id
 
@@ -66,6 +81,11 @@ def place_details():
     b_address = []
     b_website = []
     b_gmb_url = []
+    b_name_not_existed = []
+    b_add_not_existed = []
+
+    print(f'Fetching Business IDs using Geocoding...')
+    print(' ')
 
     with open('business_list_Copy.csv') as f:
         reader = csv.DictReader(f)
@@ -79,11 +99,14 @@ def place_details():
             }
 
             business_id = find_place(businessObject)
-            business_ids.append(business_id)
 
-    print('Fetching business details in progress...')
-    print(' ')
-
+            if business_id != 'none':
+                business_ids.append(business_id)
+            else:
+                b_name_not_existed.append(business_name)
+                b_add_not_existed.append(address)
+                pass
+            
     for businessID in business_ids:
         try:
             url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" + businessID + "&fields=name,formatted_phone_number,formatted_address,website,url&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
@@ -106,6 +129,8 @@ def place_details():
             b_address.append(formatted_address if formatted_address != "" else 'none')
             b_website.append(website if website != "" else 'none')
             b_gmb_url.append(url if url != "" else 'none')
+            print(f'{name} details retrieved successfully...')
+            print(' ')
             time.sleep(1)
             
         except:
@@ -127,6 +152,16 @@ def place_details():
     filename = "business_details" + now + ".csv"
     file_path = os.path.join(directory,'csvfiles/', filename)
     df.to_csv(file_path)
+
+    # Save recaptchaed requests to a CSV file
+    if b_name_not_existed:
+        no_gmb_data = {"Business Name":b_name_not_existed, "Address": b_add_not_existed}
+        df2 = pd.DataFrame(data=no_gmb_data)
+        df2.index+=1
+        directory2 = os.path.dirname(os.path.realpath(__file__))
+        filename2 = "gmb_not_existing" + now + ".csv"
+        file_path2 = os.path.join(directory2,'no_google_business_address/', filename2)
+        df2.to_csv(file_path2)
 
     print('Your files are ready.')
     print(' ')
