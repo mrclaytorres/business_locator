@@ -6,6 +6,7 @@ import os
 import os.path
 import time
 import re
+import sys
 
 # Find the coordinate of the address
 def geocoding(address):
@@ -71,6 +72,50 @@ def find_place(businessObject):
 
     return place_id
 
+# When Google API terminates connection because of limit
+def process_csv_output(*args, **kwargs):
+
+    time_start = kwargs.get("time_start")
+    b_name = kwargs.get("b_name")
+    b_phone_number = kwargs.get("b_phone_number")
+    b_address = kwargs.get("b_address")
+    b_website = kwargs.get("b_website")
+    b_gmb_url = kwargs.get("b_gmb_url")
+    b_name_not_existed = kwargs.get("b_name_not_existed")
+    b_add_not_existed = kwargs.get("b_add_not_existed")
+
+
+    time_end = datetime.datetime.now().replace(microsecond=0)
+    runtime = time_end - time_start
+    print(f"Script runtime: {runtime}.")
+    print(' ')
+
+    # Save scraped URLs to a CSV file
+    now = datetime.datetime.now().strftime('%Y%m%d-%Hh%M')
+    print('Saving to a CSV file...')
+    print(' ')
+    data = {"Business Name":b_name,"Phone Number":b_phone_number, "Address":b_address, "Website":b_website, "GMB URL": b_gmb_url}
+    df=pd.DataFrame(data=data)
+    df.index+=1
+    directory = os.path.dirname(os.path.realpath(__file__))
+    filename = "business_details" + now + ".csv"
+    file_path = os.path.join(directory,'csvfiles/', filename)
+    df.to_csv(file_path)
+
+    # Save recaptchaed requests to a CSV file
+    if b_name_not_existed:
+        no_gmb_data = {"Business Name":b_name_not_existed, "Address": b_add_not_existed}
+        df2 = pd.DataFrame(data=no_gmb_data)
+        df2.index+=1
+        directory2 = os.path.dirname(os.path.realpath(__file__))
+        filename2 = "gmb_not_existing" + now + ".csv"
+        file_path2 = os.path.join(directory2,'no_google_business_address/', filename2)
+        df2.to_csv(file_path2)
+
+    print('Your files are ready.')
+    print(' ')
+    sys.exit()
+
 # Get the Business details
 def place_details():
 
@@ -132,7 +177,11 @@ def place_details():
             print(f'{name} details retrieved successfully...')
             print(' ')
             time.sleep(1)
-            
+
+        except requests.exceptions.ConnectionError as e:
+            print(f'{e}: Connection terminated...\n')
+            process_csv_output(b_name, b_phone_number, b_address, b_website, b_gmb_url, b_name_not_existed, b_add_not_existed, time_start)
+
         except:
             pass
 
