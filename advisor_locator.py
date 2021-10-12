@@ -73,16 +73,16 @@ def find_place(businessObject):
     return place_id
 
 # When Google API terminates connection because of limit
-def process_csv_output(*args, **kwargs):
+def process_csv_output(csv_data):
 
-    time_start = kwargs.get("time_start")
-    b_name = kwargs.get("b_name")
-    b_phone_number = kwargs.get("b_phone_number")
-    b_address = kwargs.get("b_address")
-    b_website = kwargs.get("b_website")
-    b_gmb_url = kwargs.get("b_gmb_url")
-    b_name_not_existed = kwargs.get("b_name_not_existed")
-    b_add_not_existed = kwargs.get("b_add_not_existed")
+    time_start = csv_data["time_start"]
+    b_name = csv_data["b_name"]
+    b_phone_number = csv_data["b_phone_number"]
+    b_address = csv_data["b_address"]
+    b_website = csv_data["b_website"]
+    b_gmb_url = csv_data["b_gmb_url"]
+    b_name_not_existed = csv_data["b_name_not_existed"]
+    b_add_not_existed = csv_data["b_add_not_existed"]
 
 
     time_end = datetime.datetime.now().replace(microsecond=0)
@@ -179,8 +179,19 @@ def place_details():
             time.sleep(1)
 
         except requests.exceptions.ConnectionError as e:
-            print(f'{e}: Connection terminated...\n')
-            process_csv_output(b_name, b_phone_number, b_address, b_website, b_gmb_url, b_name_not_existed, b_add_not_existed, time_start)
+            print('Connection terminated...\n')
+            csv_data = {
+                'b_name': b_name,
+                'b_phone_number': b_phone_number,
+                'b_address': b_address,
+                'b_website': b_website,
+                'b_gmb_url': b_gmb_url,
+                'b_name_not_existed': b_name_not_existed,
+                'b_add_not_existed': b_add_not_existed,
+                'time_start': time_start
+
+            }
+            process_csv_output(csv_data)
 
         except:
             pass
