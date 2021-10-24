@@ -7,11 +7,12 @@ import os.path
 import time
 import re
 import sys
+import creds
 
 # Find the coordinate of the address
 def geocoding(address):
     
-    url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
+    url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + address + "&key=" + creds.API_KEY
 
     payload={}
     headers = {}
@@ -54,7 +55,7 @@ def find_place(businessObject):
         lng = str(coordinate['lng'])
 
         try:
-            url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" + stripped_name + "&inputtype=textquery&locationbias=circle:2000@" + lat + "," + lng +"&fields=place_id&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
+            url = "https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=" + stripped_name + "&inputtype=textquery&locationbias=circle:2000@" + lat + "," + lng +"&fields=place_id&key=" + creds.API_KEY
 
             payload={}
             headers = {}
@@ -154,7 +155,7 @@ def place_details():
             
     for businessID in business_ids:
         try:
-            url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" + businessID + "&fields=name,formatted_phone_number,formatted_address,website,url&key=AIzaSyBqZC8t0PfJndRjPd_Mg9f68wrhRbENBF4"
+            url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" + businessID + "&fields=name,formatted_phone_number,formatted_address,website,url&key=" + creds.API_KEY
 
             payload={}
             headers = {}
