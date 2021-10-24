@@ -149,9 +149,12 @@ chromedriver.exe
 # csvfiles but include folder container
 proxy_list.csv
 csvfiles/*
-recaptcha_requests/*
+no_google_business_address/*
 !csvfiles/.gitkeep
+!no_google_business_address/.gitkeep
 business_list*.csv
+*.xlsx
+*.csv
 
 # Credentials
 creds.py
