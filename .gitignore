@@ -153,6 +153,9 @@ no_google_business_address/*
 !csvfiles/.gitkeep
 !no_google_business_address/.gitkeep
 business_list*.csv
+*.xls
+*.xlsx
+*.csv
 
 # Credentials
 creds.py
